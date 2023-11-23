@@ -1,5 +1,5 @@
 {
-    "name": "az/myth-auth",
+    "name": "blastanders/myth-auth",
     "description": "Flexible authentication/authorization system for CodeIgniter 4. Added support for Two-Factor Authentication using authenticator apps.",
     "license": "MIT",
     "type": "library",
