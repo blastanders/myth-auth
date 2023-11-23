@@ -212,4 +212,10 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         $return['secret_qr'] = $secret_qr;
         return $return;
     }
+
+    public function isTfaEnabled(int $id)
+    {
+        $secret = $this->userModel->getTfaSecret($id);
+        return !empty($secret);
+    }
 }
