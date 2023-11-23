@@ -18,7 +18,7 @@ class UserModel extends Model
     protected $useSoftDeletes = true;
     protected $allowedFields  = [
         'email', 'username', 'password_hash', 'reset_hash', 'reset_at', 'reset_expires', 'activate_hash',
-        'status', 'status_message', 'active', 'force_pass_reset', 'permissions', 'deleted_at',
+        'status', 'status_message', 'active', 'force_pass_reset', 'permissions', 'deleted_at', 'tfa_secret'
     ];
     protected $useTimestamps   = true;
     protected $validationRules = [
@@ -120,5 +120,9 @@ class UserModel extends Model
             'username' => $faker->userName,
             'password' => bin2hex(random_bytes(16)),
         ]);
+    }
+     public function getTfaSecret(int $id)
+    {
+        return $this->find($id)->tfa_secret;
     }
 }

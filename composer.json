@@ -1,6 +1,6 @@
 {
     "name": "myth/auth",
-    "description": "Flexible authentication/authorization system for CodeIgniter 4.",
+    "description": "Flexible authentication/authorization system for CodeIgniter 4. Added support for Two-Factor Authentication using authenticator apps.",
     "license": "MIT",
     "type": "library",
     "keywords": [
@@ -14,11 +14,18 @@
             "email": "lonnieje@gmail.com",
             "homepage": "http://newmythmedia.com",
             "role": "Developer"
+        },
+        {
+            "name": "Ajax Zheng",
+            "email": "thesqlfreak@gmail.com",
+            "homepage": "https://aaron.fun",
+            "role": "Developer"
         }
     ],
-    "homepage": "https://github.com/lonnieezell/myth-auth",
+    "homepage": "https://github.com/blastanders/myth-auth",
     "require": {
-        "php": "^7.4 || ^8.0"
+        "php": "^7.4 || ^8.0",
+        "robthree/twofactorauth": "^1.8"
     },
     "require-dev": {
         "codeigniter4/codeigniter4-standard": "^1.0",

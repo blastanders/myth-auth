@@ -6,6 +6,7 @@ use CodeIgniter\Router\Exceptions\RedirectException;
 use Myth\Auth\Entities\User;
 use Myth\Auth\Exceptions\AuthException;
 use Myth\Auth\Password;
+use \RobThree\Auth\TwoFactorAuth as TwoFactorAuth;
 
 class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInterface
 {
@@ -54,6 +55,21 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
             $this->user = null;
 
             return false;
+        }
+
+        if ($this->config->enable_tfa) {
+            $session = session();
+            $session->set('tfa_email', $this->user->email);
+
+            if ($this->isTfaEnabled($this->user->id)) {
+                // return redirect()->to('/tfa');
+                header("Location: ".config('App')->baseURL."/tfa");
+                die();
+            } else {
+                // redirect()->to(route_to("tfa_setup"))->withCookies();
+                header("Location: ".config('App')->baseURL."/tfa_setup");
+                die();
+            }
         }
 
         return $this->login($this->user, (bool) $remember);
@@ -164,5 +180,36 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         return $returnUser
             ? $user
             : true;
+    }
+
+    
+    public function verifyTfaCode(int $id, string $code)
+    {
+        $app_domain = parse_url(config('App')->baseURL, PHP_URL_HOST);
+
+        $secret = $this->userModel->getTfaSecret($id);
+
+        $google2fa = new TwoFactorAuth($app_domain);
+        $res = $google2fa->verifyCode($secret, $code, 3);
+
+        return $res;
+
+        // $this->login($user);
+
+    }
+
+    public function enableTfa(int $id, string $email)
+    {
+        $app_domain = parse_url(config('App')->baseURL, PHP_URL_HOST);
+        $tfa = new TwoFactorAuth($app_domain);
+        $secret = $tfa->createSecret();
+
+        $secret_qr = $tfa->getQRCodeImageAsDataUri($email, $secret);
+        $this->userModel->update($id, ['tfa_secret' => $secret]);
+        $return = array();
+        $return['account_name'] = $app_domain . ": " . $email;
+        $return['secret'] = $secret;
+        $return['secret_qr'] = $secret_qr;
+        return $return;
     }
 }

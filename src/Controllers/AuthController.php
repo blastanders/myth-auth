@@ -11,6 +11,8 @@ use Myth\Auth\Config\Auth as AuthConfig;
 use Myth\Auth\Entities\User;
 use Myth\Auth\Models\UserModel;
 
+use \RobThree\Auth\TwoFactorAuth as TwoFactorAuth;
+
 class AuthController extends Controller
 {
     /**
@@ -522,5 +524,74 @@ class AuthController extends Controller
     protected function _render(string $view, array $data = [])
     {
         return view($view, $data);
+    }
+
+    public function tfa_setup () {
+        if (!$this->config->enable_tfa) {
+            return redirect()->to(site_url('/login'));
+        }
+        
+        $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
+        if (empty($user)) {
+            return redirect()->to(site_url('/login'));
+        }
+
+        if (!empty($user->tfa_secret)) {
+            return redirect()->to(site_url('/tfa'));
+        }
+
+        
+        $data = $this->auth->enableTfa($user->id, $user->email);
+        $data['formated_secret'] = chunk_split($data['secret'], 4, ' ');
+        $data['config'] = $this->config;
+        return $this->_render($this->config->views['tfa_setup'], $data);
+    }
+    public function tfa_setup_confirm () {
+        if (!$this->config->enable_tfa) {
+            return redirect()->to(site_url('/login'));
+        }
+        $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
+        $tfa_confirm = $this->request->getPost('tfa_confirm');
+
+        $res = $this->auth->verifyTfaCode($user->id, $tfa_confirm);
+        if ($res) {
+            echo "success";
+            session()->remove('tfa_email');
+            return $this->auth->login($user);
+            // return redirect()->to(site_url('/'));
+        } else {
+            echo "Wrong two factor authentication code";
+            die();
+        }
+    }
+
+    public function tfa () {
+        if (!$this->config->enable_tfa) {
+            return redirect()->to(site_url('/login'));
+        }
+        $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
+        if (empty($user)) {
+            return redirect()->to(site_url('/login'));
+        }
+        return $this->_render($this->config->views['tfa'], []);
+    }
+
+    public function verify_tfa_code () {
+        if (!$this->config->enable_tfa) {
+            return redirect()->to(site_url('/login'));
+        }
+        $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
+        $tfa = $this->request->getPost('tfa');
+
+        $res = $this->auth->verifyTfaCode($user->id, $tfa);
+        if ($res) {
+            echo "success";
+            session()->remove('tfa_email');
+            return $this->auth->login($user);
+            // return redirect()->to(site_url('/'));
+        } else {
+            echo "Wrong two factor authentication code";
+            die();
+        }
     }
 }

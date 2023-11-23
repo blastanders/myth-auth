@@ -31,4 +31,11 @@ $routes->group('', ['namespace' => 'Myth\Auth\Controllers'], static function ($r
     $routes->post($reservedRoutes['forgot'], 'AuthController::attemptForgot');
     $routes->get($reservedRoutes['reset-password'], 'AuthController::resetPassword', ['as' => 'reset-password']);
     $routes->post($reservedRoutes['reset-password'], 'AuthController::attemptReset');
+
+
+    // tfa
+    $routes->get($reservedRoutes['tfa'], 'AuthController::tfa', ['as' => $reservedRoutes['tfa']]);
+    $routes->get($reservedRoutes['tfa_setup'], 'AuthController::tfa_setup', ['as' => $reservedRoutes['tfa_setup']]);
+    $routes->post($reservedRoutes['tfa'], 'AuthController::verify_tfa_code');
+    $routes->post($reservedRoutes['tfa_setup'], 'AuthController::tfa_setup_confirm');
 });

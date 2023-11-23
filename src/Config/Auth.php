@@ -53,6 +53,8 @@ class Auth extends BaseConfig
         'resend-activate-account' => 'resend-activate-account',
         'forgot'                  => 'forgot',
         'reset-password'          => 'reset-password',
+        'tfa'                     => 'tfa',
+        'tfa_setup'               => 'tfa_setup',
     ];
 
     /**
@@ -80,6 +82,8 @@ class Auth extends BaseConfig
         'reset'           => 'Myth\Auth\Views\reset',
         'emailForgot'     => 'Myth\Auth\Views\emails\forgot',
         'emailActivation' => 'Myth\Auth\Views\emails\activation',
+        'tfa'             => 'Myth\Auth\Views\tfa',
+        'tfa_setup'       => 'Myth\Auth\Views\tfa_setup',
     ];
 
     /**
@@ -379,4 +383,6 @@ class Auth extends BaseConfig
      * @var int
      */
     public $resetTime = 3600;
+
+    public $enable_tfa = true;
 }
