@@ -7,6 +7,8 @@
 
 Flexible, Powerful, Secure auth package for CodeIgniter 4.
 
+# Now with two factor authenticaiton with authenticator apps.
+
 ## Project Notice
 
 As of [June 2022](https://forum.codeigniter.com/showthread.php?tid=82003) CodeIgniter now has an official
