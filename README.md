@@ -41,7 +41,7 @@ the following primary features:
 Installation is best done via Composer. Assuming Composer is installed globally, you may use
 the following command: 
 ```shell
-    > composer require myth/auth
+    > composer require blastanders/myth-auth
 ```
 
 This will add the latest stable release of **Myth:Auth** as a module to your project.
