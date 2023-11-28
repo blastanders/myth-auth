@@ -35,6 +35,8 @@
 <script type="text/javascript">
     //ajax the confirm_tfa_form to check if the code is correct
     $(document).ready(function(){
+		$("#tfa").focus();
+
         $('#tfa_form').submit(function(e){
             e.preventDefault();
             var tfa = $('#tfa').val();
