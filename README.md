@@ -7,7 +7,7 @@
 
 Flexible, Powerful, Secure auth package for CodeIgniter 4.
 
-# Now with two factor authenticaiton with authenticator apps.
+# Now with two-factor authentication with authenticator apps.
 
 ## Project Notice
 
@@ -16,7 +16,7 @@ Authentication library, [CodeIgniter Shield](https://www.codeigniter.com/user_gu
 If you are looking for an authentication solution for a new project then that is the recommended solution.
 
 This project is now maintained by volunteers. If you interact with the project repository there may be delays
-in receiving response. Please direct support questions to [GitHub Discussions](https://github.com/lonnieezell/myth-auth/discussions)
+in receiving a response. Please direct support questions to [GitHub Discussions](https://github.com/lonnieezell/myth-auth/discussions)
 or to CodeIgniter's [Forums](https://forum.codeigniter.com/forumdisplay.php?fid=34) or [Slack Channel](https://codeigniterchat.slack.com/).
 
 ## Requirements
