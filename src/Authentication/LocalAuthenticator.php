@@ -63,11 +63,11 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
 
             if ($this->isTfaEnabled($this->user->id)) {
                 // return redirect()->to('/tfa');
-                header("Location: ".config('App')->baseURL."/tfa");
+                header("Location: ".config('App')->baseURL."tfa");
                 die();
             } else {
                 // redirect()->to(route_to("tfa_setup"))->withCookies();
-                header("Location: ".config('App')->baseURL."/tfa_setup");
+                header("Location: ".config('App')->baseURL."tfa_setup");
                 die();
             }
         }
@@ -182,20 +182,13 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
             : true;
     }
 
-    
-    public function verifyTfaCode(int $id, string $code)
+    public function verifyTfaCode(string $secret, string $code)
     {
         $app_domain = parse_url(config('App')->baseURL, PHP_URL_HOST);
-
-        $secret = $this->userModel->getTfaSecret($id);
-
         $google2fa = new TwoFactorAuth($app_domain);
         $res = $google2fa->verifyCode($secret, $code, 3);
 
         return $res;
-
-        // $this->login($user);
-
     }
 
     public function enableTfa(int $id, string $email)
