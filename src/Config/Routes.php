@@ -35,7 +35,7 @@ $routes->group('', ['namespace' => 'Myth\Auth\Controllers'], static function ($r
 
     // tfa
     $routes->get($reservedRoutes['tfa'], 'AuthController::tfa', ['as' => $reservedRoutes['tfa']]);
-    $routes->get($reservedRoutes['tfa_setup'], 'AuthController::tfa_setup', ['as' => $reservedRoutes['tfa_setup']]);
     $routes->post($reservedRoutes['tfa'], 'AuthController::verify_tfa_code');
+    $routes->get($reservedRoutes['tfa_setup'], 'AuthController::tfa_setup', ['as' => $reservedRoutes['tfa_setup']]);
     $routes->post($reservedRoutes['tfa_setup'], 'AuthController::tfa_setup_confirm');
 });
