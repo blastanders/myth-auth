@@ -1,9 +1,9 @@
 # Myth:Auth
 
-[![](https://github.com/lonnieezell/myth-auth/workflows/PHPUnit/badge.svg)](https://github.com/lonnieezell/myth-auth/actions/workflows/phpunit.yml)
-[![](https://github.com/lonnieezell/myth-auth/workflows/PHPStan/badge.svg)](https://github.com/lonnieezell/myth-auth/actions/workflows/phpstan.yml)
-[![](https://github.com/lonnieezell/myth-auth/workflows/Deptrac/badge.svg)](https://github.com/lonnieezell/myth-auth/actions/workflows/deptrac.yml)
-[![Coverage Status](https://coveralls.io/repos/github/lonnieezell/myth-auth/badge.svg?branch=develop)](https://coveralls.io/github/lonnieezell/myth-auth?branch=develop)
+[![](https://github.com/blastanders/myth-auth/workflows/PHPUnit/badge.svg)](https://github.com/blastanders/myth-auth/actions/workflows/phpunit.yml)
+[![](https://github.com/blastanders/myth-auth/workflows/PHPStan/badge.svg)](https://github.com/blastanders/myth-auth/actions/workflows/phpstan.yml)
+[![](https://github.com/blastanders/myth-auth/workflows/Deptrac/badge.svg)](https://github.com/blastanders/myth-auth/actions/workflows/deptrac.yml)
+[![Coverage Status](https://coveralls.io/repos/github/blastanders/myth-auth/badge.svg?branch=develop)](https://coveralls.io/github/blastanders/myth-auth?branch=develop)
 
 Flexible, Powerful, Secure auth package for CodeIgniter 4.
 
@@ -16,7 +16,7 @@ Authentication library, [CodeIgniter Shield](https://www.codeigniter.com/user_gu
 If you are looking for an authentication solution for a new project then that is the recommended solution.
 
 This project is now maintained by volunteers. If you interact with the project repository there may be delays
-in receiving a response. Please direct support questions to [GitHub Discussions](https://github.com/lonnieezell/myth-auth/discussions)
+in receiving a response. Please direct support questions to [GitHub Discussions](https://github.com/blastanders/myth-auth/discussions)
 or to CodeIgniter's [Forums](https://forum.codeigniter.com/forumdisplay.php?fid=34) or [Slack Channel](https://codeigniterchat.slack.com/).
 
 ## Requirements
@@ -62,8 +62,14 @@ namespace to the `$psr4` array. For example, if you copied it into **app/ThirdPa
 
 ### Upgrading
 
-Be sure to check the [Changes Docs](https://github.com/lonnieezell/myth-auth/blob/develop/docs/_changes.md)
+Be sure to check the [Changes Docs](https://github.com/blastanders/myth-auth/blob/develop/docs/_changes.md)
 for necessary steps to take after upgrading versions.
+
+```shell
+    > composer update blastanders/myth-auth
+```
+Views:
+Be sure to make a copy of the $views in the module config under **src/Config/Auth.php**
 
 ## Configuration
 
