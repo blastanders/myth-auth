@@ -185,6 +185,9 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
     public function verifyTfaCode(string $secret, string $code)
     {
         $app_domain = parse_url(config('App')->baseURL, PHP_URL_HOST);
+        if (!empty($this->config->tfa_issuer)) {
+            $app_domain = $this->config->tfa_issuer;
+        }
         $google2fa = new TwoFactorAuth($app_domain);
         $res = $google2fa->verifyCode($secret, $code, 3);
 
@@ -194,10 +197,13 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
     public function enableTfa(int $id, string $email)
     {
         $app_domain = parse_url(config('App')->baseURL, PHP_URL_HOST);
+        if (!empty($this->config->tfa_issuer)) {
+            $app_domain = $this->config->tfa_issuer;
+        }
         $tfa = new TwoFactorAuth($app_domain);
         $secret = $tfa->createSecret();
 
-        $secret_qr = $tfa->getQRCodeImageAsDataUri($email, $secret);
+        $secret_qr = $tfa->getQRCodeImageAsDataUri($app_domain . ':' . $email, $secret);
         $this->userModel->update($id, ['tfa_secret' => $secret]);
         $return = array();
         $return['account_name'] = $app_domain . ": " . $email;

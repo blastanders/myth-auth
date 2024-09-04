@@ -385,4 +385,6 @@ class Auth extends BaseConfig
     public $resetTime = 3600;
 
     public $enable_tfa = true;
+    public $tfa_issuer = "";
+
 }
