@@ -385,6 +385,8 @@ class Auth extends BaseConfig
     public $resetTime = 3600;
 
     public $enable_tfa = true;
+
+    //Put a nice name here if you want to show it in the authenticator app, otherwise it will use the domain name
     public $tfa_issuer = "";
 
 }
