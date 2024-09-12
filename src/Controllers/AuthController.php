@@ -586,7 +586,7 @@ class AuthController extends Controller
         $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
         $tfa = $this->request->getPost('tfa');
 
-        $res = $this->auth->verifyTfaCode($user->id, $tfa);
+        $res = $this->auth->verifyTfaCode($user->tfa_secret, $tfa);
         if ($res) {
             echo "success";
             session()->remove('tfa_email');
