@@ -204,7 +204,7 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         $secret = $tfa->createSecret();
 
         $secret_qr = $tfa->getQRCodeImageAsDataUri($app_domain . ':' . $email, $secret);
-        $this->userModel->update($id, ['tfa_secret' => $secret]);
+        // $this->userModel->update($id, ['tfa_secret' => $secret]);
         $return = array();
         $return['account_name'] = $app_domain . ": " . $email;
         $return['secret'] = $secret;
