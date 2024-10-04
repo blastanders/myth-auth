@@ -115,7 +115,7 @@ You can easily override the views used by editing **Config/Auth.php**, and chang
 values within the `$views` variable: 
 
     public $views = [
-        'login'       => 'Myth\Auth\Views\login',
+        'login'       => 'App\Views\auth\login', //assume you have a view under app\Views\auth\login.php
         'register'    => 'Myth\Auth\Views\register',
         'forgot'      => 'Myth\Auth\Views\forgot',
         'reset'       => 'Myth\Auth\Views\reset',
