@@ -76,6 +76,8 @@ Be sure to make a copy of the $views in the module config under **src/Config/Aut
 Once installed you need to configure the framework to use the **Myth\Auth** library.
 In your application, perform the following setup: 
 
+**0. Copy vendor/blastanders/myth-auth/src/Config/Auth.php to app/Config/Auth.php. All changes to configs should be done in app/Config/Auth.php.**
+
 1. Edit **app/Config/Email.php** and verify that a **fromName** and **fromEmail** are set 
     as that is used when sending emails for password reset, etc. 
 
