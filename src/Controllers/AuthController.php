@@ -563,7 +563,7 @@ class AuthController extends Controller
             $this->auth->login($user);
             return redirect()->to(site_url('/'));
         } else {
-            echo "Wrong two factor authentication code";
+            return redirect()->back()->with('error', 'Wrong two factor authentication code');
             die();
         }
     }
@@ -593,7 +593,7 @@ class AuthController extends Controller
             $this->auth->login($user);
             return redirect()->to(site_url('/'));
         } else {
-            echo "Wrong two factor authentication code";
+            return redirect()->back()->with('error', 'Wrong two factor authentication code');
             die();
         }
     }
