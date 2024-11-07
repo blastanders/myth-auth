@@ -3,7 +3,7 @@
     "description": "Flexible authentication/authorization system for CodeIgniter 4. Added support for Two-Factor Authentication using authenticator apps.",
     "license": "MIT",
     "type": "library",
-    "version": "1.0.8",
+    "version": "1.1.1",
     "keywords": [
         "codeigniter",
         "authentication",
