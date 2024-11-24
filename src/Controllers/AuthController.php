@@ -561,6 +561,7 @@ class AuthController extends Controller
             echo "success";
             session()->remove('tfa_email');
             $this->auth->login($user);
+            die();
             return redirect()->to(site_url('/'));
         } else {
             return redirect()->back()->with('error', 'Wrong two factor authentication code');
