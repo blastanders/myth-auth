@@ -591,6 +591,7 @@ class AuthController extends Controller
             echo "success";
             session()->remove('tfa_email');
             $this->auth->login($user);
+            die();
             $redirectURL = $this->config->landingRoute ?? '/';
             return redirect($redirectURL);
         } else {
