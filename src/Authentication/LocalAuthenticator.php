@@ -60,14 +60,15 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         if ($this->config->enable_tfa) {
             $session = session();
             $session->set('tfa_email', $this->user->email);
+            $subdomain = $_SERVER['SERVER_NAME'];
 
             if ($this->isTfaEnabled($this->user->id)) {
                 // return redirect()->to('/tfa');
-                header("Location: ".config('App')->baseURL."tfa");
+                header("Location: ". $subdomain ."/tfa");
                 die();
             } else {
                 // redirect()->to(route_to("tfa_setup"))->withCookies();
-                header("Location: ".config('App')->baseURL."tfa_setup");
+                header("Location: ". $subdomain ."/tfa_setup");
                 die();
             }
         }
