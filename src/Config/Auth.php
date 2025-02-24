@@ -388,5 +388,6 @@ class Auth extends BaseConfig
 
     //Put a nice name here if you want to show it in the authenticator app, otherwise it will use the domain name
     public $tfa_issuer = "";
-
+    //set this to 0 to disable trust this device
+    public $trust_this_device_duration = 30 * DAY;
 }

@@ -140,6 +140,8 @@ class AuthController extends Controller
     public function logout()
     {
         if ($this->auth->check()) {
+            $cookie_name = "tfa_trust_this_device";
+            header("Set-Cookie: {$cookie_name}=; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . "; Secure; SameSite=Strict");
             $this->auth->logout();
         }
 
@@ -577,7 +579,16 @@ class AuthController extends Controller
         if (empty($user)) {
             return redirect()->to(site_url('/login'));
         }
-        return $this->_render($this->config->views['tfa'], []);
+        $trust_days = $this->config->trust_this_device_duration / (24 * 60 * 60);
+
+        if ($this->config->trust_this_device_duration > 0) {
+            $cookie_name = "tfa_trust_this_device";
+            if (@$_COOKIE[$cookie_name]) {
+                $this->auth->login($user);
+                return redirect()->to(site_url('/'));
+            }
+        }
+        return $this->_render($this->config->views['tfa'], ['trust_days' => $trust_days]);
     }
 
     public function verify_tfa_code () {
@@ -589,6 +600,14 @@ class AuthController extends Controller
 
         $res = $this->auth->verifyTfaCode($user->tfa_secret, $tfa);
         if ($res) {
+            $cookie_name = "tfa_trust_this_device";
+            if ($this->request->getPost('trust_this_device') == 'true') {
+                $cookie_value = md5($user->password_hash . "_" . $user->email);
+                header("Set-Cookie: {$cookie_name}={$cookie_value}; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() + $this->config->trust_this_device_duration) . "; Secure; SameSite=Strict");
+            } else {
+                header("Set-Cookie: {$cookie_name}=; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . "; Secure; SameSite=Strict");
+            }
+            
             echo "success";
             session()->remove('tfa_email');
             $this->auth->login($user);

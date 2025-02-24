@@ -44,7 +44,7 @@
                             <label for="" class="form-label">Enter the rolling code in your authenticator app to verify everything is setup correctly.</label>
                             <div class="row justify-content-md-center">
                                 <div class="tfa_confirm_container">
-                                    <input type="text" class="form-control text-center" name="tfa_confirm" id="tfa_confirm" aria-describedby="Multifactor authenticator confirmation" placeholder="123456" maxlength="6">
+                                    <input type="text" class="form-control text-center" name="tfa_confirm" id="tfa_confirm" aria-describedby="Multifactor authenticator confirmation" placeholder="123456" maxlength="6" autofocus>
                                     <input type="hidden" class="d-none" value="<?= $secret ?>" name="secret" id="secret">
                                 </div>
                             </div>
