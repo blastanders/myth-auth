@@ -196,13 +196,17 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
     }
 
     
-    public function getTfaCode (string $secret) {
+    public function getTfaCode (string|null $secret = '') {
         $app_domain = parse_url(config('App')->baseURL, PHP_URL_HOST);
         if (!empty($this->config->tfa_issuer)) {
             $app_domain = $this->config->tfa_issuer;
         }
         $google2fa = new TwoFactorAuth($app_domain);
+        if (empty($secret)) {
+            $secret = $google2fa->createSecret();
+        }
         $res = $google2fa->getCode($secret);
+
         return $res;
     }
 
@@ -228,7 +232,7 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
     {
         $secret = $this->userModel->getTfaSecret($id);
         if (empty($secret)) {
-            return !empty($this->userModel->find($id)->tfa_recipient);
+            return ($this->userModel->find($id)->tfa_method == 'sms' || $this->userModel->find($id)->tfa_method == 'email');
         }
         return !empty($secret);
     }
