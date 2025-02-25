@@ -392,6 +392,7 @@ class Auth extends BaseConfig
     public $tfa_issuer = "";
     //set this to 0 to disable trust this device
     public $trust_this_device_duration = 30 * DAY;
+    public $user_mobile_col = 'mobile';
 
     public function send_sms ($from, $to, $message) {
         $api_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -428,10 +429,6 @@ class Auth extends BaseConfig
         curl_close($curl);
         $return = json_decode($response, true);
 
-        if (!$return) {
-            return false;
-        } else {
-            return $return['error']['code'] == 'SUCCESS';
-        }
+        return $return;
     }
 }

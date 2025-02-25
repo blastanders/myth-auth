@@ -43,9 +43,9 @@ class AuthController extends Controller
         // Most services in this controller require
         // the session to be started - so fire it up!
         $this->session = service('session');
-
         $this->config = config('Auth');
         $this->auth   = service('authentication');
+        $session = session();
     }
 
     // --------------------------------------------------------------------
@@ -543,12 +543,20 @@ class AuthController extends Controller
             return redirect()->to(site_url('/tfa'));
         }
 
+        if ($user->tfa_method == 'email') {
+            $tfa_recipient = $user->email;
+        } elseif ($user->tfa_method == 'sms') {
+            $tfa_recipient = $user->{$this->config->user_mobile_col};
+        } else {
+            $tfa_recipient = '';
+        }
+
         
         $data = $this->auth->enableTfa($user->id, $user->email);
         $data['formated_secret'] = chunk_split($data['secret'], 4, ' ');
         $data['config'] = $this->config;
         $data['tfa_method'] = empty($user->tfa_method) ? 'authenticator' : $user->tfa_method;
-        $data['tfa_recipient'] = $user->tfa_recipient ? $user->tfa_recipient : $user->email;
+        $data['tfa_recipient'] = $tfa_recipient;
 
         return $this->_render($this->config->views['tfa_setup'], $data);
     }
@@ -570,7 +578,7 @@ class AuthController extends Controller
                     echo "Wrong two factor authentication code.";
                     die();
                 } else {
-                    model(UserModel::class)->update($user->id, ['tfa_recipient' => $this->request->getPost('tfa_recipient')]);
+                    // model(UserModel::class)->update($user->id, ['tfa_recipient' => $this->request->getPost('tfa_recipient')]);
                     echo "success";
                     session()->remove('tfa_email');
                     $this->auth->login($user);
@@ -620,9 +628,9 @@ class AuthController extends Controller
             $user->tfa_15_mins = $tfa_code;
             $user->tfa_15_mins_exp = date("Y-m-d H:i:s", time() + 15 * 60);
             $users->save($user);
-            $res = $this->send_code_email($user->tfa_recipient, $tfa_code);
+            $res = $this->send_code_email($user->email, $tfa_code);
             if ($res) {
-                $recipient = $user->tfa_recipient;
+                $recipient = $user->email;
                 $parts = explode('@', $recipient);
                 $local = $parts[0];
                 $domain = $parts[1];
@@ -634,13 +642,20 @@ class AuthController extends Controller
         }
 
         if ($user->tfa_method == "sms") {
+
             $tfa_code = $this->auth->getTfaCode($user->tfa_secret);
             $users = model(UserModel::class);
             $user->tfa_15_mins = $tfa_code;
             $user->tfa_15_mins_exp = date("Y-m-d H:i:s", time() + 15 * 60);
             $users->save($user);
-            $res = $this->send_code_email($user->tfa_recipient, $tfa_code);
-            $this->send_code_sms($user->tfa_recipient, $tfa_code);
+
+            $recipient = $user->{$this->config->user_mobile_col};
+            $res = $this->send_code_sms($recipient, $tfa_code);
+            if (!$res) {
+                $recipient = "Error sending SMS. " . $this->error;
+            } else {
+                $recipient = str_repeat("*", strlen($recipient) - 3) . substr($recipient, -3);
+            }
         }
 
         return $this->_render($this->config->views['tfa'], ['trust_days' => $trust_days, 'recipient' => $recipient]);
@@ -763,7 +778,7 @@ class AuthController extends Controller
             ->send();
 
         if (! $sent) {
-            $this->error = lang('Auth.errorEmailSent', [$recipient]);
+            $this->error = "Recipient: [{$recipient}]";
 
             return false;
         }
@@ -771,13 +786,24 @@ class AuthController extends Controller
     }
 
     public function send_code_sms ($recipient, $tfa_code) {
+        $recipient = preg_replace('/[^0-9+]/', '', $recipient);
+
+        // Check if the recipient starts with '0' and replace it with '+61'
+        if (strpos($recipient, '0') === 0) {
+            $recipient = '+61' . substr($recipient, 1);
+        }
+
+
         $message = "{$tfa_code} is your authentication code for {$this->config->tfa_issuer}. This code will expire in 15 mins.";
         $res = $this->config->send_sms($this->config->tfa_issuer, $recipient, $message);
-        if (! $res) {
+        // pre_var_dump($res);
+        if ($res['error']['code'] != 'SUCCESS') {
+            pre_var_dump($res);
             $this->error = lang('Auth.errorEmailSent', [$recipient]);
 
             return false;
         }
         return true;
     }
+
 }
