@@ -216,6 +216,19 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
     public function isTfaEnabled(int $id)
     {
         $secret = $this->userModel->getTfaSecret($id);
+        if (empty($secret)) {
+            return !empty($this->userModel->find($id)->tfa_recipient);
+        }
         return !empty($secret);
+    }
+    public function getTfaCode (string $secret) {
+        $app_domain = parse_url(config('App')->baseURL, PHP_URL_HOST);
+        if (!empty($this->config->tfa_issuer)) {
+            $app_domain = $this->config->tfa_issuer;
+        }
+        $google2fa = new TwoFactorAuth($app_domain);
+        $res = $google2fa->getCode($secret);
+
+        return $res;
     }
 }

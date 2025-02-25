@@ -55,6 +55,7 @@ class Auth extends BaseConfig
         'reset-password'          => 'reset-password',
         'tfa'                     => 'tfa',
         'tfa_setup'               => 'tfa_setup',
+        'send_tfa_setup_code'     => 'send_tfa_setup_code',
     ];
 
     /**
@@ -84,6 +85,7 @@ class Auth extends BaseConfig
         'emailActivation' => 'Myth\Auth\Views\emails\activation',
         'tfa'             => 'Myth\Auth\Views\tfa',
         'tfa_setup'       => 'Myth\Auth\Views\tfa_setup',
+        'tfa_code_email'  => 'Myth\Auth\Views\emails\tfa',
     ];
 
     /**
@@ -390,4 +392,46 @@ class Auth extends BaseConfig
     public $tfa_issuer = "";
     //set this to 0 to disable trust this device
     public $trust_this_device_duration = 30 * DAY;
+
+    public function send_sms ($from, $to, $message) {
+        $api_key = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+        $api_secret = "*****************";
+        pre_var_dump("send_sms needs to be configured.");
+        return false;
+
+        $payload = array();
+        $payload['from'] = $from;
+        $payload['to'] = $to;
+        $payload['message'] = $message;
+
+        if (strlen($payload['from']) > 11 || empty($payload['from'])) {
+            unset($payload['from']);
+        }
+
+        $payload = http_build_query($payload);
+        $curl = curl_init();
+
+        curl_setopt_array($curl, array(
+          CURLOPT_URL => 'https://api.transmitsms.com/send-sms.json',
+          CURLOPT_RETURNTRANSFER => true,
+          CURLOPT_ENCODING => '',
+          CURLOPT_MAXREDIRS => 10,
+          CURLOPT_TIMEOUT => 0,
+          CURLOPT_FOLLOWLOCATION => true,
+          CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+          CURLOPT_USERPWD => "{$api_key}:{$api_secret}",
+          CURLOPT_CUSTOMREQUEST => 'POST',
+          CURLOPT_POSTFIELDS => $payload,
+        ));
+
+        $response = curl_exec($curl);
+        curl_close($curl);
+        $return = json_decode($response, true);
+
+        if (!$return) {
+            return false;
+        } else {
+            return $return['error']['code'] == 'SUCCESS';
+        }
+    }
 }

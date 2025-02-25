@@ -12,7 +12,26 @@
 
 					<form id="tfa_form" action="<?= url_to('tfa') ?>" method="post">
 						<?= csrf_field() ?>
-						<label for="" class="form-label">Enter the rolling code in your authenticator app to login.</label>
+						<?php if (!empty($recipient)) { ?>
+                            <?php if (stripos($recipient, 'error') !== false) { ?>
+                            <div
+                                class="alert alert-danger"
+                                role="alert"
+                            > <?php echo $recipient; ?>
+                            </div>
+                            <?php } else { ?>
+                                <div
+                                    class="alert alert-success"
+                                    role="alert"
+                                > A two-factor authentication code has been sent to <?php echo $recipient; ?>. 
+                                <br>
+                                The code will expire after 15 mins.
+                                </div>
+                                <label for="tfa" class="form-label">Enter the code received to login.</label>
+                            <?php } ?>
+                        <?php } else { ?>
+                            <label for="tfa" class="form-label">Enter the rolling code in your authenticator app to login.</label>
+                        <?php } ?>
 						<div class="row">
 							<div class="col">
 								<div class="">

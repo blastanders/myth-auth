@@ -18,7 +18,8 @@ class UserModel extends Model
     protected $useSoftDeletes = true;
     protected $allowedFields  = [
         'email', 'username', 'password_hash', 'reset_hash', 'reset_at', 'reset_expires', 'activate_hash',
-        'status', 'status_message', 'active', 'force_pass_reset', 'permissions', 'deleted_at', 'tfa_secret'
+        'status', 'status_message', 'active', 'force_pass_reset', 'permissions', 'deleted_at', 'tfa_secret',
+        'tfa_method', 'tfa_recipient', 'tfa_15_mins', 'tfa_15_mins_exp'
     ];
     protected $useTimestamps   = true;
     protected $validationRules = [

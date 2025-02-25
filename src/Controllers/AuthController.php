@@ -10,6 +10,7 @@ use CodeIgniter\Session\Session;
 use Myth\Auth\Config\Auth as AuthConfig;
 use Myth\Auth\Entities\User;
 use Myth\Auth\Models\UserModel;
+use Config\Email;
 
 use \RobThree\Auth\TwoFactorAuth as TwoFactorAuth;
 
@@ -546,28 +547,51 @@ class AuthController extends Controller
         $data = $this->auth->enableTfa($user->id, $user->email);
         $data['formated_secret'] = chunk_split($data['secret'], 4, ' ');
         $data['config'] = $this->config;
+        $data['tfa_method'] = empty($user->tfa_method) ? 'authenticator' : $user->tfa_method;
+        $data['tfa_recipient'] = $user->tfa_recipient ? $user->tfa_recipient : $user->email;
+
         return $this->_render($this->config->views['tfa_setup'], $data);
     }
-    public function tfa_setup_confirm () {
+    public function tfa_setup_confirm()
+    {
         if (!$this->config->enable_tfa) {
             return redirect()->to(site_url('/login'));
         }
         $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
         $tfa_confirm = $this->request->getPost('tfa_confirm');
 
-        $res = $this->auth->verifyTfaCode($this->request->getPost('secret'), $tfa_confirm);
-
-        if ($res) {
-            model(UserModel::class)->update($user->id, ['tfa_secret' => $this->request->getPost('secret')]);
-
-            echo "success";
-            session()->remove('tfa_email');
-            $this->auth->login($user);
-            die();
-            return redirect()->to(site_url('/'));
+        if ($user->tfa_method == 'email' || $user->tfa_method == 'sms') {
+            if ((time() - strtotime($user->tfa_15_mins_exp)) > (15 * 60 + 60)) {
+                //allow for 1 extra minute. written as 15 * 60 + 60 for easy search
+                return redirect()->back()->with('error', 'Authentication code has expired. Please click on Send Code to get a new one.');
+                die();
+            } else {
+                if ($tfa_confirm != $user->tfa_15_mins) {
+                    echo "Wrong two factor authentication code.";
+                    die();
+                } else {
+                    model(UserModel::class)->update($user->id, ['tfa_recipient' => $this->request->getPost('tfa_recipient')]);
+                    echo "success";
+                    session()->remove('tfa_email');
+                    $this->auth->login($user);
+                    die();
+                    return redirect()->to(site_url('/'));
+                }
+            }
         } else {
-            return redirect()->back()->with('error', 'Wrong two factor authentication code');
-            die();
+            $res = $this->auth->verifyTfaCode($this->request->getPost('secret'), $tfa_confirm);
+            if ($res) {
+                model(UserModel::class)->update($user->id, ['tfa_secret' => $this->request->getPost('secret')]);
+                echo "success";
+                session()->remove('tfa_email');
+                $this->auth->login($user);
+                die();
+                return redirect()->to(site_url('/'));
+            } else {
+                echo "Wrong two factor authentication code";
+                die();
+                return redirect()->back()->with('error', 'Wrong two factor authentication code');
+            }
         }
     }
 
@@ -588,7 +612,38 @@ class AuthController extends Controller
                 return redirect()->to(site_url('/'));
             }
         }
-        return $this->_render($this->config->views['tfa'], ['trust_days' => $trust_days]);
+        $recipient = '';
+
+        if ($user->tfa_method == 'email') {
+            $tfa_code = $this->auth->getTfaCode($user->tfa_secret);
+            $users = model(UserModel::class);
+            $user->tfa_15_mins = $tfa_code;
+            $user->tfa_15_mins_exp = date("Y-m-d H:i:s", time() + 15 * 60);
+            $users->save($user);
+            $res = $this->send_code_email($user->tfa_recipient, $tfa_code);
+            if ($res) {
+                $recipient = $user->tfa_recipient;
+                $parts = explode('@', $recipient);
+                $local = $parts[0];
+                $domain = $parts[1];
+                $obscuredLocal = substr($local, 0, 2) . str_repeat('*', max(0, strlen($local) - 4)) . substr($local, -2);
+                $recipient = $obscuredLocal . '@' . $domain;
+            } else {
+                $recipient = "Error sending email code";
+            }
+        }
+
+        if ($user->tfa_method == "sms") {
+            $tfa_code = $this->auth->getTfaCode($user->tfa_secret);
+            $users = model(UserModel::class);
+            $user->tfa_15_mins = $tfa_code;
+            $user->tfa_15_mins_exp = date("Y-m-d H:i:s", time() + 15 * 60);
+            $users->save($user);
+            $res = $this->send_code_email($user->tfa_recipient, $tfa_code);
+            $this->send_code_sms($user->tfa_recipient, $tfa_code);
+        }
+
+        return $this->_render($this->config->views['tfa'], ['trust_days' => $trust_days, 'recipient' => $recipient]);
     }
 
     public function verify_tfa_code () {
@@ -598,25 +653,131 @@ class AuthController extends Controller
         $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
         $tfa = $this->request->getPost('tfa');
 
-        $res = $this->auth->verifyTfaCode($user->tfa_secret, $tfa);
-        if ($res) {
-            $cookie_name = "tfa_trust_this_device";
-            if ($this->request->getPost('trust_this_device') == 'true') {
-                $cookie_value = md5($user->password_hash . "_" . $user->email);
-                header("Set-Cookie: {$cookie_name}={$cookie_value}; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() + $this->config->trust_this_device_duration) . "; Secure; SameSite=Strict");
+        if ($user->tfa_method == 'email' || $user->tfa_method == 'sms') {
+            if ((time() - strtotime($user->tfa_15_mins_exp)) > (15 * 60 + 60)) {
+                //allow for 1 extra minute. written as 15 * 60 + 60 for easy search
+                return redirect()->back()->with('error', 'Authentication code has expired. Refresh the page to get another code.');
+                die();
             } else {
-                header("Set-Cookie: {$cookie_name}=; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . "; Secure; SameSite=Strict");
+                if ($tfa != $user->tfa_15_mins) {
+                    echo "Wrong two factor authentication code.";
+                    die();
+                } else {
+                    $cookie_name = "tfa_trust_this_device";
+                    if ($this->request->getPost('trust_this_device') == 'true') {
+                        $cookie_value = md5($user->password_hash . "_" . $user->email);
+                        header("Set-Cookie: {$cookie_name}={$cookie_value}; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() + $this->config->trust_this_device_duration) . "; Secure; SameSite=Strict");
+                    } else {
+                        header("Set-Cookie: {$cookie_name}=; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . "; Secure; SameSite=Strict");
+                    }
+                    model(UserModel::class)->update($user->id, ['tfa_15_mins' => 'used']);
+                    echo "success";
+                    $this->auth->login($user);
+                    die();
+                    return redirect()->to(site_url('/'));
+                }
             }
-            
-            echo "success";
-            session()->remove('tfa_email');
-            $this->auth->login($user);
-            die();
-            $redirectURL = $this->config->landingRoute ?? '/';
-            return redirect($redirectURL);
         } else {
-            return redirect()->back()->with('error', 'Wrong two factor authentication code');
-            die();
+
+            $res = $this->auth->verifyTfaCode($user->tfa_secret, $tfa);
+            if ($res) {
+                $cookie_name = "tfa_trust_this_device";
+                if ($this->request->getPost('trust_this_device') == 'true') {
+                    $cookie_value = md5($user->password_hash . "_" . $user->email);
+                    header("Set-Cookie: {$cookie_name}={$cookie_value}; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() + $this->config->trust_this_device_duration) . "; Secure; SameSite=Strict");
+                } else {
+                    header("Set-Cookie: {$cookie_name}=; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . "; Secure; SameSite=Strict");
+                }
+
+                echo "success";
+                session()->remove('tfa_email');
+                $this->auth->login($user);
+                die();
+                $redirectURL = $this->config->landingRoute ?? '/';
+                return redirect($redirectURL);
+            } else {
+                return redirect()->back()->with('error', 'Wrong two factor authentication code');
+                die();
+            }
         }
+    }
+
+    public function send_tfa_setup_code () {
+        $method = $this->request->getGet('method');
+        $recipient = $this->request->getGet('recipient');
+
+        $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
+
+        // die(PHP_EOL.__FILE__.__LINE__.PHP_EOL);
+        $tfa_code = $this->auth->getTfaCode($user->tfa_secret);
+
+        $users = model(UserModel::class);
+        $user->tfa_15_mins = $tfa_code;
+        $user->tfa_15_mins_exp = date("Y-m-d H:i:s", time() + 15 * 60);
+        $users->save($user);
+
+        // pre_var_dump($tfa_code, $method, $recipient);
+        // die(PHP_EOL.__FILE__.__LINE__.PHP_EOL);
+
+        $output = array();
+        $output['status'] = "error";
+        $output['message'] = 'unknown error';
+
+        if ($method == 'email') {
+            $res = $this->send_code_email($recipient, $tfa_code);
+            if ($res) {
+                $output['status'] = "ok";
+                $output['message'] = "Email sent to {$recipient}. The code will expire in 15 mins.";
+            } else {
+                $output['status'] = "error";
+                $output['message'] = "Error sending email to {$recipient}.";
+            }
+        } elseif ($method == 'sms') {
+            $res = $this->send_code_sms($recipient, $tfa_code);
+            if ($res) {
+                $output['status'] = "ok";
+                $output['message'] = "SMS sent to {$recipient}. The code will expire in 15 mins.";
+            } else {
+                $output['status'] = "error";
+                $output['message'] = "Error sending SMS to {$recipient}.";
+            }
+
+        } else {
+            echo "Unknown method.";
+            die(PHP_EOL.__FILE__.__LINE__.PHP_EOL);
+        }
+        header("Content-type:application/json");
+        echo json_encode($output);
+        die();
+    }
+
+    public function send_code_email ($recipient, $tfa_code) {
+        $email  = service('email');
+        $config = new Email();
+
+        $sent = $email->setFrom($config->fromEmail, $config->fromName)
+            ->setTo($recipient)
+            ->setSubject("Two-factor authentication code [{$this->config->tfa_issuer}]")
+            ->setMessage(view($this->config->views['tfa_code_email'], ['tfa_code' => $tfa_code]))
+            ->setMailType('html')
+            ->send();
+
+        if (! $sent) {
+            $this->error = lang('Auth.errorEmailSent', [$recipient]);
+
+            return false;
+        }
+        return true;
+    }
+
+    public function send_code_sms ($recipient, $tfa_code) {
+        $message = "{$tfa_code} is your authentication code for {$this->config->tfa_issuer}. This code will expire in 15 mins.";
+        $res = $this->config->send_sms($this->config->tfa_issuer, $recipient, $message);
+        if (! $res) {
+            $this->error = lang('Auth.errorEmailSent', [$recipient]);
+
+            return false;
+        }
+        return true;
     }
 }
