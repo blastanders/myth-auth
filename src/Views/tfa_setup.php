@@ -108,7 +108,7 @@
             })
             .done(function(data) {
                 if (data == 'success') {
-                    window.location.href = '/dashboard';
+                    window.location.href = '<?php echo $landing_route ?>';
                 } else {
                     toastr.error(data);
                 }

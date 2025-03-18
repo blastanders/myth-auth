@@ -555,6 +555,9 @@ class AuthController extends Controller
         $data['config'] = $this->config;
         $data['tfa_method'] = empty($user->tfa_method) ? 'authenticator' : $user->tfa_method;
         $data['tfa_recipient'] = $tfa_recipient;
+        $data['landing_route'] = $this->config->landingRoute;
+
+        
 
         return $this->_render($this->config->views['tfa_setup'], $data);
     }
