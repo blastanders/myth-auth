@@ -141,8 +141,6 @@ class AuthController extends Controller
     public function logout()
     {
         if ($this->auth->check()) {
-            $cookie_name = "tfa_trust_this_device";
-            header("Set-Cookie: {$cookie_name}=; path=/; expires=" . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . "; Secure; SameSite=Strict");
             $this->auth->logout();
         }
 
