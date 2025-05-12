@@ -658,8 +658,14 @@ class AuthController extends Controller
                 $recipient = str_repeat("*", strlen($recipient) - 3) . substr($recipient, -3);
             }
         }
+        $view_data = [
+            'landing_route' => $this->config->landingRoute,
+            'config' => $this->config,
+            'trust_days' => $trust_days,
+            'recipient' => $recipient
+        ];
 
-        return $this->_render($this->config->views['tfa'], ['trust_days' => $trust_days, 'recipient' => $recipient]);
+        return $this->_render($this->config->views['tfa'], $view_data);
     }
 
     public function verify_tfa_code () {

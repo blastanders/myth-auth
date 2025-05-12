@@ -24,8 +24,8 @@
     ],
     "homepage": "https://github.com/blastanders/myth-auth",
     "require": {
-        "php": "^7.4 || ^8.0",
-        "robthree/twofactorauth": "^1.8"
+        "php": "^8.2",
+        "robthree/twofactorauth": "^2.0"
     },
     "require-dev": {
         "codeigniter4/codeigniter4-standard": "^1.0",
