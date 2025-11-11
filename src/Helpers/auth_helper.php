@@ -380,8 +380,13 @@ if (!function_exists("_db_change")) {
         $file_path = mysqli_real_escape_string($conn, $file);
         $file = md5($file_path);
         $sch[0] = mysqli_real_escape_string($conn, str_replace("`", "", $sch[0]));
+        $db_change_table_name = "{$sch[0]}`.`base_database_change_file_name";
+        
+        if ($db_change_table_name == '`.`base_database_change_file_name') {
+            $db_change_table_name = 'base_database_change_file_name';
+        }
 
-        $base_database_change_file_name_insert_sql = "INSERT IGNORE INTO `{$sch[0]}`.`base_database_change_file_name` (`hash`, `path`) VALUES ('{$file}', '{$file_path}');";
+        $base_database_change_file_name_insert_sql = "INSERT IGNORE INTO `{$db_change_table_name}` (`hash`, `path`) VALUES ('{$file}', '{$file_path}');";
         $query = mysqli_query($conn, $base_database_change_file_name_insert_sql);
 
         if ($query_type == 'DELETE') {
