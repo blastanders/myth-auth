@@ -90,7 +90,7 @@ class Services extends BaseService
             return self::getSharedInstance('resetter', $config);
         }
 
-        $config ??= config(AuthConfig::class);
+        $config ??= config('Auth');
         $class = $config->activeResetter ?? EmailResetter::class;
 
         /** @var class-string<ResetterInterface> $class */
