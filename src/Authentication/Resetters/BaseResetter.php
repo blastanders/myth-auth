@@ -27,7 +27,7 @@ abstract class BaseResetter
     /**
      * Sets the initial config file.
      */
-    public function __construct(?AuthConfig $config = null)
+    public function __construct($config = null)
     {
         $this->config = $config ?? config('Auth');
     }
@@ -37,7 +37,7 @@ abstract class BaseResetter
      *
      * @return $this
      */
-    public function setConfig(AuthConfig $config)
+    public function setConfig($config)
     {
         $this->config = $config;
 
