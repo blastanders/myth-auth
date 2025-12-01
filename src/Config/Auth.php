@@ -56,6 +56,7 @@ class Auth extends BaseConfig
         'tfa'                     => 'tfa',
         'tfa_setup'               => 'tfa_setup',
         'send_tfa_setup_code'     => 'send_tfa_setup_code',
+        'impersonate'             => 'impersonate',
     ];
 
     /**
