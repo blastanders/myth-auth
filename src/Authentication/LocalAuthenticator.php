@@ -236,4 +236,14 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         }
         return !empty($secret);
     }
+
+    public function impersonate($username_or_id_or_email)
+    {
+        $user = $this->userModel->where('username', $username_or_id_or_email)->orWhere('id', $username_or_id_or_email)->orWhere('email', $username_or_id_or_email)->first();
+        if (empty($user)) {
+            return false;
+        }
+        return $this->login($user, false);
+    }
+
 }

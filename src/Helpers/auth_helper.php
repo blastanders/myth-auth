@@ -2,6 +2,12 @@
 
 use Myth\Auth\Entities\User;
 
+if (! function_exists('impersonate')) {
+    function impersonate($username_or_id_or_email) {
+        return service('authentication')->impersonate($username_or_id_or_email);
+    }
+}
+
 if (! function_exists('logged_in')) {
     /**
      * Checks to see if the user is logged in.
