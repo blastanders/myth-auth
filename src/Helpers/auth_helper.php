@@ -845,13 +845,19 @@ if (!function_exists('array_to_csv')) {
 }
 if (!function_exists('csv_to_array')) {
     function csv_to_array ($path = '') {
-        $rows   = array_map('str_getcsv', file($path));
-        $header = array_shift($rows);
-        $csv    = array();
-        foreach($rows as $row) {
-            $csv[] = array_combine($header, $row);
+        $fp = fopen($path, 'r');
+        $rows = array();
+        $header = array();
+
+        while ($row = fgetcsv($fp)) {
+            if (empty($header)) {
+                $header = $row;
+            } else {
+                $rows[] = array_combine($header, $row);
+            }
         }
 
-        return $csv;
+        fclose($fp);
+        return $rows;
     }
 }

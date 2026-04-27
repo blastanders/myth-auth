@@ -157,8 +157,20 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         $user = $this->userModel->where($credentials)->first();
 
         if (! $user instanceof User) {
-            $this->error = lang('Auth.badAttempt');
+            // Try custom validator if configured
+            if ($this->config->customValidator !== null) {
+                $fullCredentials = $credentials;
+                $fullCredentials['password'] = $password;
 
+                $customValidator = new $this->config->customValidator[0]();
+                $this->config->customValidator[0] = $customValidator;
+                
+                if (is_callable($this->config->customValidator)) {
+                    return call_user_func($this->config->customValidator, $fullCredentials);
+                }
+            }
+
+            $this->error = lang('Auth.badAttempt');
             return false;
         }
 

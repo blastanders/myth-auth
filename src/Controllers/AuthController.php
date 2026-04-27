@@ -103,6 +103,14 @@ class AuthController extends Controller
         $login    = $this->request->getPost('login');
         $password = $this->request->getPost('password');
         $remember = (bool) $this->request->getPost('remember');
+        $recaptcha = $this->request->getPost('g-recaptcha-response');
+
+        if (! $this->validateRecaptcha($recaptcha)) {
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Invalid recaptcha');
+        }
 
         // Determine credential type
         $type = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
@@ -131,6 +139,25 @@ class AuthController extends Controller
             ->to($redirectURL)
             ->withCookies()
             ->with('message', lang('Auth.loginSuccess'));
+    }
+
+    public function validateRecaptcha($recaptcha)
+    {
+        $secret = env('recaptcha.secretkey');
+        $url = 'https://www.google.com/recaptcha/api/siteverify';
+        $data = ['secret' => $secret, 'response' => $recaptcha];
+        $options = [
+            'http' => [
+                'header' => 'Content-Type: application/x-www-form-urlencoded',
+                'method' => 'POST',
+                'content' => http_build_query($data),
+            ],
+        ];
+        $context = stream_context_create($options);
+        $result = file_get_contents($url, false, $context);
+        $result = json_decode($result, true);
+
+        return $result['success'];
     }
 
     /**

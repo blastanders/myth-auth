@@ -43,13 +43,14 @@
 							<?php if ($trust_days > 0) { ?>
                             <div class="col-md-12">
                                 <div class="form-check">
+                                    <input type="hidden" name="trust_this_device" value="0">
                                     <input class="form-check-input" type="checkbox" name="trust_this_device" id="trust_this_device">
                                     <label class="form-check-label" for="trust_this_device">Trust this device (No need for authenticator for <?= $trust_days ?> days)</label>
                                 </div>
                             </div>
                             <?php } ?>
 							<div class="col">
-								<button type="submit" class="btn btn-primary btn-block px-5 py-2 mb-5">Login</button>
+								<button type="submit" class="btn btn-primary btn-block px-5 py-2 mb-5 g-recaptcha" data-sitekey="<?php print env('recaptcha.sitekey'); ?>" data-callback='onSubmit' data-action='tfa'>Login</button>
 							</div>
 						</div>
 					</form>
@@ -60,6 +61,10 @@
 	</div>
 </div>
 <script type="text/javascript">
+    function onSubmit(token) {
+        document.getElementById("tfa_form").submit();
+    }
+
     //ajax the confirm_tfa_form to check if the code is correct
     $(document).ready(function(){
 		$("#tfa").focus();
@@ -71,18 +76,20 @@
 			if ($('#trust_this_device').length > 0) {
 				trust_this_device = $('#trust_this_device').prop('checked');
 			}
-
+            var recaptcha_response = grecaptcha.getResponse();
+            
             $.ajax({
                 url: $(this).attr('action'),
                 type: 'POST',
                 data: {
                     tfa: tfa,
-					trust_this_device: trust_this_device
+					trust_this_device: trust_this_device,
+                    'g-recaptcha-response': recaptcha_response
                 },
                 success: function(data){
-                    if(data == 'success'){
+                    if (data == 'success'){
                         window.location.href = '<?php echo $landing_route ?>';
-                    }else{
+                    } else {
                         toastr.error('Incorrect code, please try again.');
                     }
                 }

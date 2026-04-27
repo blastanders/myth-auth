@@ -324,6 +324,17 @@ class Auth extends BaseConfig
     public $minimumPasswordLength = 8;
 
     /**
+     * Custom validation callback when user is not found in local database.
+     * Should return true/false. If true, developer must handle session/login manually.
+     * 
+     * Example:
+     * public $customValidator = [\App\Controllers\MyCustomAuth::class, 'validateUser'];
+     * // or
+     * public $customValidator = function($credentials) { return true/false; };
+     */
+    public $customValidator = null;
+
+    /**
      * --------------------------------------------------------------------
      * Password Check Helpers
      * --------------------------------------------------------------------
