@@ -40,4 +40,8 @@ $routes->group('', ['namespace' => 'Myth\Auth\Controllers'], static function ($r
     $routes->post($reservedRoutes['tfa_setup'], 'AuthController::tfa_setup_confirm');
 
     $routes->get($reservedRoutes['send_tfa_setup_code'], 'AuthController::send_tfa_setup_code');
+
+    $routes->get('auth/session-relogin.js', 'AuthController::sessionReloginJs');
+    $routes->post('auth/relogin-attempt', 'AuthController::attemptRelogin');
+    $routes->post('auth/relogin-tfa', 'AuthController::verifyReloginTfa');
 });

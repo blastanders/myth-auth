@@ -325,5 +325,42 @@ $routes->group('admin', ['filter' => 'role:admin,superadmin'], function($routes)
 
 ## Customization
 
+
+## Auto relogin:
+
+In BaseController, where it detects session expired, add:
+
+```php
+if ($this->request->isAJAX()) {
+    $response->setStatusCode(401);
+    $response->setContentType('application/json');
+    $response->setJSON([
+        'error'           => 'session_expired',
+        'session_expired' => true,
+        'message'         => 'Your session has expired. Please log in again.',
+    ]);
+    $response->send();
+    exit;
+}
+```
+Add this right before the </body> tag in the layout.
+
+```php
+<?php
+    $sec = config('Security');
+    ?>
+<script>
+window.MythAuthSessionRelogin = <?= json_encode([
+    'attemptUrl'   => site_url('auth/relogin-attempt'),
+    'verifyTfaUrl' => site_url('auth/relogin-tfa'),
+    'csrfHeader'   => $sec->headerName,
+    'csrfCookie'   => $sec->cookieName,
+], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+</script>
+<script src="<?= site_url('auth/session-relogin.js') ?>" defer></script>
+```
+
+
+## Da end
 See the [Extending](docs/extending.md) documentation.
 

@@ -7,6 +7,7 @@ use CodeIgniter\HTTP\CLIRequest;
 use CodeIgniter\HTTP\IncomingRequest;
 use CodeIgniter\HTTP\RedirectResponse;
 use CodeIgniter\Session\Session;
+use Myth\Auth\Authentication\LocalAuthenticator;
 use Myth\Auth\Config\Auth as AuthConfig;
 use Myth\Auth\Entities\User;
 use Myth\Auth\Models\UserModel;
@@ -103,14 +104,6 @@ class AuthController extends Controller
         $login    = $this->request->getPost('login');
         $password = $this->request->getPost('password');
         $remember = (bool) $this->request->getPost('remember');
-        $recaptcha = $this->request->getPost('g-recaptcha-response');
-
-        if (! $this->validateRecaptcha($recaptcha)) {
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', 'Invalid recaptcha');
-        }
 
         // Determine credential type
         $type = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
@@ -139,25 +132,6 @@ class AuthController extends Controller
             ->to($redirectURL)
             ->withCookies()
             ->with('message', lang('Auth.loginSuccess'));
-    }
-
-    public function validateRecaptcha($recaptcha)
-    {
-        $secret = env('recaptcha.secretkey');
-        $url = 'https://www.google.com/recaptcha/api/siteverify';
-        $data = ['secret' => $secret, 'response' => $recaptcha];
-        $options = [
-            'http' => [
-                'header' => 'Content-Type: application/x-www-form-urlencoded',
-                'method' => 'POST',
-                'content' => http_build_query($data),
-            ],
-        ];
-        $context = stream_context_create($options);
-        $result = file_get_contents($url, false, $context);
-        $result = json_decode($result, true);
-
-        return $result['success'];
     }
 
     /**
@@ -840,4 +814,238 @@ class AuthController extends Controller
         return true;
     }
 
+    public function sessionReloginJs()
+    {
+        $path = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'Assets' . DIRECTORY_SEPARATOR . 'session-relogin.js';
+
+        if (! is_file($path)) {
+            return $this->response->setStatusCode(500)->setBody('Asset missing');
+        }
+
+        return $this->response
+            ->setStatusCode(200)
+            ->setHeader('Content-Type', 'application/javascript; charset=UTF-8')
+            ->setHeader('Cache-Control', 'private, max-age=3600')
+            ->setBody(file_get_contents($path) ?: '');
+    }
+
+    public function attemptRelogin()
+    {
+
+        $rules = [
+            'login'    => 'required',
+            'password' => 'required',
+        ];
+
+        if ($this->config->validFields === ['email']) {
+            $rules['login'] .= '|valid_email';
+        }
+
+        $json = $this->request->getGetPost();
+        if (! is_array($json)) {
+            $json = [];
+        }
+
+        $data = [
+            'login'    => $json['login'] ?? $this->request->getPost('login'),
+            'password' => $json['password'] ?? $this->request->getPost('password'),
+            'remember' => $json['remember'] ?? $this->request->getPost('remember'),
+        ];
+
+        $validation = service('validation');
+        $validation->setRules($rules);
+
+        if (! $validation->run($data)) {
+            return $this->response
+                ->setStatusCode(422)
+                ->setJSON([
+                    'ok'      => false,
+                    'error'   => 'validation',
+                    'message' => $validation->getErrors(),
+                ]);
+        }
+
+        $login    = (string) $data['login'];
+        $password = (string) $data['password'];
+        $remember = (bool) $data['remember'];
+
+        $auth = service('authentication');
+
+        if (! $auth instanceof LocalAuthenticator) {
+            return $this->response->setStatusCode(500)->setJSON([
+                'ok'    => false,
+                'error' => 'authenticator_unsupported',
+            ]);
+        }
+
+        $type = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+
+        $user = $auth->validate([$type => $login, 'password' => $password], true);
+
+        if (! $user instanceof User) {
+            $auth->recordLoginAttempt($login, $this->request->getIPAddress(), null, false);
+
+            return $this->response->setStatusCode(401)->setJSON([
+                'ok'      => false,
+                'error'   => 'auth_failed',
+                'message' => strip_tags($auth->error() ?? lang('Auth.badAttempt')),
+            ]);
+        }
+
+        if ($user->isBanned()) {
+            $auth->recordLoginAttempt($user->email, $this->request->getIPAddress(), $user->id ?? null, false);
+
+            return $this->response->setStatusCode(403)->setJSON([
+                'ok'      => false,
+                'error'   => 'banned',
+                'message' => lang('Auth.userIsBanned'),
+            ]);
+        }
+
+        if (! $user->isActivated()) {
+            $auth->recordLoginAttempt($user->email, $this->request->getIPAddress(), $user->id ?? null, false);
+
+            return $this->response->setStatusCode(403)->setJSON([
+                'ok'      => false,
+                'error'   => 'not_activated',
+                'message' => strip_tags(lang('Auth.notActivated')),
+            ]);
+        }
+
+        if ($user->force_pass_reset === true) {
+            $resetPath = route_to('reset-password');
+            if (! $resetPath) {
+                $slug      = $this->config->reservedRoutes['reset-password'] ?? 'reset-password';
+                $resetPath = site_url($slug);
+            }
+            $resetUrl = $resetPath . '?token=' . $user->reset_hash;
+
+            return $this->response->setJSON([
+                'ok'                   => false,
+                'needs_password_reset' => true,
+                'reset_url'            => $resetUrl,
+            ]);
+        }
+
+        if ($this->config->enable_tfa) {
+            $this->session->set('tfa_email', $user->email);
+
+            if ($auth->isTfaEnabled($user->id)) {
+                return $this->response->setJSON([
+                    'ok'        => false,
+                    'needs_tfa' => true,
+                ]);
+            }
+
+            $setupPath = route_to('tfa_setup');
+            if (! $setupPath) {
+                $slug      = $this->config->reservedRoutes['tfa_setup'] ?? 'tfa_setup';
+                $setupPath = site_url($slug);
+            }
+
+            return $this->response->setJSON([
+                'ok'               => false,
+                'needs_tfa_setup'  => true,
+                'tfa_setup_url'    => $setupPath,
+            ]);
+        }
+
+        $auth->login($user, $remember);
+
+        return $this->response->setJSON(['ok' => true]);
+    }
+
+    public function verifyReloginTfa()
+    {
+        if (! $this->config->enable_tfa) {
+            return $this->response->setStatusCode(400)->setJSON(['ok' => false, 'message' => 'TFA disabled']);
+        }
+
+        $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
+
+        if (empty($user)) {
+            return $this->response->setStatusCode(401)->setJSON(['ok' => false, 'message' => 'Session expired. Log in again.']);
+        }
+
+        $json = $this->request->getGetPost();
+        if (! is_array($json)) {
+            $json = [];
+        }
+
+        $tfa = (string) ($json['tfa'] ?? $this->request->getGetPost('tfa'));
+        $trust = $json['trust_this_device'] ?? $this->request->getGetPost('trust_this_device');
+        $cookie_name = 'tfa_trust_this_device';
+
+        if ($user->tfa_method === 'email' || $user->tfa_method === 'sms') {
+            if ((time() - strtotime((string) $user->tfa_15_mins_exp)) > (15 * 60 + 60)) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'ok'      => false,
+                    'message' => 'Authentication code has expired. Refresh the login page to get another code.',
+                ]);
+            }
+
+            if ($tfa !== $user->tfa_15_mins) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'ok'      => false,
+                    'message' => 'Wrong two factor authentication code.',
+                ]);
+            }
+
+            if ($trust === 'true') {
+                $cookie_value = md5($user->password_hash . '_' . $user->email);
+                header('Set-Cookie: ' . $cookie_name . '=' . $cookie_value . '; path=/; expires=' . gmdate('D, d M Y H:i:s \G\M\T', time() + $this->config->trust_this_device_duration) . '; Secure; SameSite=Strict');
+            } else {
+                header('Set-Cookie: ' . $cookie_name . '=; path=/; expires=' . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . '; Secure; SameSite=Strict');
+            }
+
+            model(UserModel::class)->update($user->id, ['tfa_15_mins' => 'used']);
+            $this->auth->login($user, false);
+            session()->remove('tfa_email');
+
+            $out = ['ok' => true];
+            if ($this->auth->user()->force_pass_reset === true) {
+                $resetPath = route_to('reset-password');
+                if (! $resetPath) {
+                    $slug      = $this->config->reservedRoutes['reset-password'] ?? 'reset-password';
+                    $resetPath = site_url($slug);
+                }
+                $out['needs_password_reset'] = true;
+                $out['reset_url']            = $resetPath . '?token=' . $this->auth->user()->reset_hash;
+            }
+
+            return $this->response->setJSON($out);
+        }
+
+        $res = $this->auth->verifyTfaCode($user->tfa_secret, $tfa);
+
+        if (! $res) {
+            return $this->response->setStatusCode(401)->setJSON([
+                'ok'      => false,
+                'message' => 'Wrong two factor authentication code',
+            ]);
+        }
+
+        if ($trust === 'true') {
+            $cookie_value = md5($user->password_hash . '_' . $user->email);
+            header('Set-Cookie: ' . $cookie_name . '=' . $cookie_value . '; path=/; expires=' . gmdate('D, d M Y H:i:s \G\M\T', time() + $this->config->trust_this_device_duration) . '; Secure; SameSite=Strict');
+        } else {
+            header('Set-Cookie: ' . $cookie_name . '=; path=/; expires=' . gmdate('D, d M Y H:i:s \G\M\T', time() - 1000) . '; Secure; SameSite=Strict');
+        }
+
+        session()->remove('tfa_email');
+        $this->auth->login($user, false);
+
+        $out = ['ok' => true];
+        if ($this->auth->user()->force_pass_reset === true) {
+            $resetPath = route_to('reset-password');
+            if (! $resetPath) {
+                $slug      = $this->config->reservedRoutes['reset-password'] ?? 'reset-password';
+                $resetPath = site_url($slug);
+            }
+            $out['needs_password_reset'] = true;
+            $out['reset_url']            = $resetPath . '?token=' . $this->auth->user()->reset_hash;
+        }
+
+        return $this->response->setJSON($out);
+    }
 }
