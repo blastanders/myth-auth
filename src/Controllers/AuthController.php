@@ -1048,4 +1048,20 @@ class AuthController extends Controller
 
         return $this->response->setJSON($out);
     }
+
+    public function beyondOperationalBoundaries () {
+        if (!$this->auth->check()) {
+            $this->response->setStatusCode(401);
+            $this->response->setContentType('application/json');
+            $this->response->setJSON([
+                'error'           => 'session_expired',
+                'session_expired' => true,
+                'message'         => 'Your session has expired. Please log in again.',
+            ]);
+            $this->response->send();
+            exit;
+        }
+
+        return $this->response->setStatusCode(200)->setJSON(['ok' => true]);
+    }
 }

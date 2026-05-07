@@ -328,7 +328,7 @@ $routes->group('admin', ['filter' => 'role:admin,superadmin'], function($routes)
 
 ## Auto relogin:
 
-In BaseController, where it detects session expired, add:
+[Optional] In BaseController, where it detects session expired, add:
 
 ```php
 if ($this->request->isAJAX()) {
@@ -343,7 +343,7 @@ if ($this->request->isAJAX()) {
     exit;
 }
 ```
-Add this right before the </body> tag in the layout.
+[Mandatory] Add this right before the </body> tag in the layout.
 
 ```php
 <?php

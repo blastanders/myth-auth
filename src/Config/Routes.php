@@ -44,4 +44,7 @@ $routes->group('', ['namespace' => 'Myth\Auth\Controllers'], static function ($r
     $routes->get('auth/session-relogin.js', 'AuthController::sessionReloginJs');
     $routes->post('auth/relogin-attempt', 'AuthController::attemptRelogin');
     $routes->post('auth/relogin-tfa', 'AuthController::verifyReloginTfa');
+
+    // check if user is logged out "Beyond Operational Boundaries"
+    $routes->get('auth/bob', 'AuthController::beyondOperationalBoundaries');
 });
