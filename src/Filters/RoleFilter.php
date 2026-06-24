@@ -19,6 +19,15 @@ class RoleFilter extends BaseFilter implements FilterInterface
     {
         // If no user is logged in then send them to the login form.
         if (! $this->authenticate->check()) {
+            if ($request->isAJAX() || $request->getHeaderLine('X-Requested-With') == 'XMLHttpRequest') {
+                return service('response')
+                ->setStatusCode(401)
+                ->setJSON([
+                    'error'           => 'session_expired',
+                    'session_expired' => true,
+                    'message'         => 'Your session has expired. Please log in again.',
+                ]);
+            }
             session()->set('redirect_url', current_url());
 
             return redirect($this->reservedRoutes['login']);

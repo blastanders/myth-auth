@@ -15,17 +15,16 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
      *
      * @param bool $remember Should we remember the user (if enabled)
      */
-    public function attempt(array $credentials, ?bool $remember = null): bool
+    public function attempt(array $credentials, ?bool $remember = null, ?bool $bypass_tfa = false): bool
     {
         $this->user = $this->validate($credentials, true);
-
+        
+        
         if (empty($this->user)) {
             // Always record a login attempt, whether success or not.
             $ipAddress = service('request')->getIPAddress();
             $this->recordLoginAttempt($credentials['email'] ?? $credentials['username'], $ipAddress, null, false);
-
             $this->user = null;
-
             return false;
         }
 
@@ -33,37 +32,33 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
             // Always record a login attempt, whether success or not.
             $ipAddress = service('request')->getIPAddress();
             $this->recordLoginAttempt($credentials['email'] ?? $credentials['username'], $ipAddress, $this->user->id ?? null, false);
-
             $this->error = lang('Auth.userIsBanned');
-
             $this->user = null;
-
             return false;
         }
 
-        if (! $this->user->isActivated()) {
+        if (!$this->user->isActivated()) {
             // Always record a login attempt, whether success or not.
             $ipAddress = service('request')->getIPAddress();
             $this->recordLoginAttempt($credentials['email'] ?? $credentials['username'], $ipAddress, $this->user->id ?? null, false);
-
             $param = http_build_query([
                 'login' => urlencode($credentials['email'] ?? $credentials['username']),
             ]);
-
             $this->error = lang('Auth.notActivated') . ' ' . anchor(route_to('resend-activate-account') . '?' . $param, lang('Auth.activationResend'));
-
             $this->user = null;
-
             return false;
         }
 
-        if ($this->config->enable_tfa) {
+        if ($this->config->enable_tfa && !$bypass_tfa) {
             $session = session();
             $session->set('tfa_email', $this->user->email);
+               
             // $subdomain = $_SERVER['SERVER_NAME'];
-
             if ($this->isTfaEnabled($this->user->id)) {
                 // return redirect()->to('/tfa');
+                // pre_var_dump($this->user);
+                // pre_var_dump($session->get());
+                //die("123");
                 header("Location: /tfa");
                 die();
             } else {

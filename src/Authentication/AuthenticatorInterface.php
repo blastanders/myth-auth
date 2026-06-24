@@ -11,7 +11,7 @@ interface AuthenticatorInterface
      *
      * @param bool $remember Should we remember the user (if enabled)
      */
-    public function attempt(array $credentials, ?bool $remember = null): bool;
+    public function attempt(array $credentials, ?bool $remember = null, ?bool $bypass_tfa = false): bool;
 
     /**
      * Checks to see if the user is logged in or not.

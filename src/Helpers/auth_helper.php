@@ -400,7 +400,7 @@ if (!function_exists("_db_change")) {
                 foreach ($field_data_old as $col_name => $each_col) {
                     $database_change_arr = array();
                     $database_change_arr['query_type'] = $query_type;
-                    $database_change_arr['database_table'] = $table_name;
+                    $database_change_arr['database_table'] = str_replace('`', '', $table_name);
                     $database_change_arr['data_id'] = $pk_val;
                     $database_change_arr['field_name'] = $col_name;
                     $database_change_arr['field_data_old'] = @$field_data_old[$database_change_arr['field_name']];
@@ -425,7 +425,7 @@ if (!function_exists("_db_change")) {
                 if ((string)$database_change_arr['field_data_new'] != (string)$database_change_arr['field_data_old']) {
 
                     $database_change_arr['query_type'] = $query_type;
-                    $database_change_arr['database_table'] = $table_name;
+                    $database_change_arr['database_table'] = str_replace('`', '', $table_name);
                     $database_change_arr['data_id'] = $pk_val;
                     $database_change_arr['ip'] = $ip;
                     $database_change_arr['file_name'] = $file;
