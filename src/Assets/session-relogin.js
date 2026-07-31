@@ -35,74 +35,78 @@
         return;
       }
       var html = `
-  <div class="modal fade" id="myth-auth-session-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="z-index: 9999;">
-  <div class="modal-dialog modal-dialog-centered">
-  <div class="modal-content">
-  <div class="modal-header"><h5 class="modal-title">You are logged out</h5></div>
-  <div class="modal-body">
-  <p class="text-muted small">Please log in again to continue.</p>
-  <div id="myth-auth-session-msg" class="alert py-2 small d-none text-white"></div>
-  <div id="relogin-step-1">
-  <div class="mb-2">
-  <label class="form-label" for="myth-auth-session-login">Email or username</label>
-  <input type="text" class="form-control bg-light p-2" id="myth-auth-session-login" autocomplete="username" />
-  </div>
-  <div class="mb-2">
-  <label class="form-label" for="myth-auth-session-password">Password</label>
-  <input type="password" class="form-control bg-light p-2" id="myth-auth-session-password" autocomplete="current-password" />
-  </div>
-  </div>
-  <div id="relogin-step-2">
-  <div class="mb-2" id="myth-auth-session-tfa-wrap">
-  <label class="form-label" for="myth-auth-session-tfa">Authentication code</label>
-  <input type="text" class="form-control bg-light p-2" id="myth-auth-session-tfa" autocomplete="one-time-code" />
-  </div>
-  </div>
-  </div>
-  <div class="modal-footer">
-  <button type="button" class="btn btn-primary" id="myth-auth-session-submit">Log in</button>
-  </div>
-  </div>
-  </div>
-  </div>
-  `;
-      document.body.insertAdjacentHTML("beforeend", html);
-      document
-        .getElementById("myth-auth-session-submit")
-        .addEventListener("click", submitLogin);
+        <div class="modal fade" id="myth-auth-session-modal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false" style="z-index: 9999;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">You are logged out</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small">Please log in again to continue.</p>
+                        <div id="myth-auth-session-msg" class="alert py-2 small d-none" style="white-space: pre-line;"></div>
+                        <div id="relogin-step-1">
+                            <div class="mb-2">
+                                <label class="form-label" for="myth-auth-session-login">Email or username</label>
+                                <input type="text" class="form-control bg-light p-2" id="myth-auth-session-login" autocomplete="username" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label" for="myth-auth-session-password">Password</label>
+                                <input type="password" class="form-control bg-light p-2" id="myth-auth-session-password" autocomplete="current-password" />
+                            </div>
+                        </div>
+                        <div id="relogin-step-2">
+                            <div class="mb-2" id="myth-auth-session-tfa-wrap">
+                                <label class="form-label" for="myth-auth-session-tfa">Authentication code</label>
+                                <input type="text" class="form-control bg-light p-2" id="myth-auth-session-tfa" autocomplete="one-time-code" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer justify-content-between">
+                        <button type="button" class="btn btn-secondary" id="myth-auth-session-cancel">
+                            Cancel
+                        </button>
+
+                        <button type="button" class="btn btn-primary" id="myth-auth-session-submit">
+                            Log in
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+        document.getElementById('myth-auth-session-submit').addEventListener('click', submitLogin);
+        document.getElementById('myth-auth-session-cancel').addEventListener('click', function () { window.location.href = '/logout';});
     }
   
-    function showMsg(text, type = "danger") {
-      var el = document.getElementById("myth-auth-session-msg");
+    function showMsg(message, type = 'danger') {
+        var el = document.getElementById('myth-auth-session-msg');
       if (!el) {
         return;
       }
   
       // reset the value of myth-auth-session-tfa
-      var tfa = document.getElementById("myth-auth-session-tfa");
+        var tfa = document.getElementById('myth-auth-session-tfa');
       if (tfa) {
-        tfa.value = "";
+            tfa.value = '';
+        }
+
+        var text = '';
+
+        if (typeof message === 'object' && message !== null) {
+            text = Object.values(message).join('\n');
+        } else if (typeof message === 'string') {
+            text = message;
       }
+
       if (text) {
         el.textContent = text;
-        el.classList.remove(
-          "d-none",
-          "alert-danger",
-          "alert-success",
-          "alert-info",
-          "alert-warning",
-        );
-        el.classList.add("alert-" + type);
+            el.classList.remove('d-none', 'alert-danger', 'alert-success', 'alert-info', 'alert-warning');
+            el.classList.add('alert-' + type);
         // console.log('showMsg', el.classList);
       } else {
-        el.textContent = "";
-        el.classList.remove(
-          "alert-danger",
-          "alert-success",
-          "alert-info",
-          "alert-warning",
-        );
-        el.classList.add("d-none");
+            el.textContent = '';
+            el.classList.remove('alert-danger', 'alert-success', 'alert-info', 'alert-warning');
+            el.classList.add('d-none');
       }
     }
   
@@ -112,6 +116,12 @@
       if (!el || typeof bootstrap === "undefined") {
         return;
       }
+
+        Array.from(document.body.children).forEach(function (child) {
+            child.style.filter = '';
+            child.style.transition = '';
+        });
+
       var inst = bootstrap.Modal.getInstance(el);
       if (inst) {
         inst.hide();
@@ -134,8 +144,15 @@
         modalBackdrop.style.zIndex = "9998";
       }
   
-      document.getElementById("relogin-step-1").classList.remove("d-none");
-      document.getElementById("relogin-step-2").classList.add("d-none");
+        document.getElementById('relogin-step-1').classList.remove('d-none');
+        document.getElementById('relogin-step-2').classList.add('d-none');
+
+        Array.from(document.body.children).forEach(function (child) {
+            if (child.id !== 'myth-auth-session-modal') {
+                child.style.filter = 'blur(6px)';
+                child.style.transition = 'filter .2s ease';
+            }
+        });
   
       var el = document.getElementById("myth-auth-session-modal");
       if (typeof bootstrap !== "undefined") {
@@ -300,6 +317,7 @@
       // ping auth/bob every 5 mins
       //   dismiss  myth-auth-session-modal if getting {ok: true}
       setInterval(bob,5 * 60 * 1000);
+      bob();
   
       document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
