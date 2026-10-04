@@ -347,15 +347,17 @@ if ($this->request->isAJAX()) {
 
 ```php
 <?php
-    $sec = config('Security');
-    ?>
+$sec = config('Security');
+?>
 <script>
-window.MythAuthSessionRelogin = <?= json_encode([
-    'attemptUrl'   => site_url('auth/relogin-attempt'),
-    'verifyTfaUrl' => site_url('auth/relogin-tfa'),
-    'csrfHeader'   => $sec->headerName,
-    'csrfCookie'   => $sec->cookieName,
-], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
+    window.MythAuthSessionRelogin = <?= json_encode([
+                                        'attemptUrl'   => site_url('auth/relogin-attempt'),
+                                        'verifyTfaUrl' => site_url('auth/relogin-tfa'),
+                                        'csrfHeader'   => $sec->headerName,
+                                        'csrfCookie'   => $sec->cookieName,
+                                        'ssoEnabled'   => filter_var(env('365sso.enabled', false), FILTER_VALIDATE_BOOLEAN),
+                                        'ssoLoginUrl'  => env('365sso.redirecturi')
+                                    ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
 </script>
 <script src="<?= site_url('auth/session-relogin.js') ?>" defer></script>
 ```
