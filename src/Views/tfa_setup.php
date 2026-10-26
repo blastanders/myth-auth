@@ -96,9 +96,6 @@
         $('#confirm_tfa_form').submit(function(e) {
             e.preventDefault();
             var tfa_confirm = $('#tfa_confirm').val();
-
-            toastr.error(data);
-
             $.ajax({
                 url: $(this).attr('action'),
                 type: 'POST',
@@ -109,6 +106,8 @@
             .done(function(data) {
                 if (data == 'success') {
                     window.location.href = '<?php echo $landing_route ?>';
+                } else if (data == 'expired') {
+                    window.location.href = '<?php echo site_url('login') ?>?message=expired';
                 } else {
                     toastr.error(data);
                 }

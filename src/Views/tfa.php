@@ -62,39 +62,40 @@
 </div>
 <script type="text/javascript">
     function onSubmit(token) {
-        document.getElementById("tfa_form").submit();
+        var tfa = $('#tfa').val();
+        var trust_this_device = 0;
+        if ($('#trust_this_device').length > 0) {
+            trust_this_device = $('#trust_this_device').prop('checked');
+        }
+        let recaptcha_response = '';
+
+        if (grecaptcha.enterprise) {
+            recaptcha_response = grecaptcha.enterprise.getResponse();
+        } else {
+            recaptcha_response = grecaptcha.getResponse();
+        }
+
+        $.ajax({
+            url: $(this).attr('action'),
+            type: 'POST',
+            data: {
+                tfa: tfa,
+                trust_this_device: trust_this_device,
+                'g-recaptcha-response': recaptcha_response
+            },
+            success: function(data){
+                if (data == 'success'){
+                    window.location.href = '<?php echo $landing_route ?>';
+                } else {
+                    toastr.error('Incorrect code, please try again.');
+                }
+            }
+        });
     }
 
     //ajax the confirm_tfa_form to check if the code is correct
     $(document).ready(function(){
 		$("#tfa").focus();
-
-        $('#tfa_form').submit(function(e){
-            e.preventDefault();
-            var tfa = $('#tfa').val();
-			var trust_this_device = 0;
-			if ($('#trust_this_device').length > 0) {
-				trust_this_device = $('#trust_this_device').prop('checked');
-			}
-            var recaptcha_response = grecaptcha.getResponse();
-            
-            $.ajax({
-                url: $(this).attr('action'),
-                type: 'POST',
-                data: {
-                    tfa: tfa,
-					trust_this_device: trust_this_device,
-                    'g-recaptcha-response': recaptcha_response
-                },
-                success: function(data){
-                    if (data == 'success'){
-                        window.location.href = '<?php echo $landing_route ?>';
-                    } else {
-                        toastr.error('Incorrect code, please try again.');
-                    }
-                }
-            });
-        });
     });
 </script>
 

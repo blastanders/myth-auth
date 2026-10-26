@@ -591,6 +591,10 @@ class AuthController extends Controller
         } else {
             $res = $this->auth->verifyTfaCode($this->request->getPost('secret'), $tfa_confirm);
             if ($res) {
+                if (!isset($user->id) || empty($user->id)) {
+                    echo "expired";
+                    die();
+                }
                 model(UserModel::class)->update($user->id, ['tfa_secret' => $this->request->getPost('secret')]);
                 echo "success";
                 session()->remove('tfa_email');
@@ -675,6 +679,20 @@ class AuthController extends Controller
         }
         $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
         $tfa = $this->request->getPost('tfa');
+        $recaptcha = $this->request->getPost('g-recaptcha-response');
+
+        if (empty($recaptcha)) {
+            return redirect()->back()->with('error', 'Please verify that you are not a robot.');
+            die();
+        }
+
+        $recaptcha = $this->verify_recaptcha($recaptcha);
+
+        if (!$recaptcha['success']) {
+            return redirect()->back()->with('error', 'Please verify that you are not a robot.');
+            die();
+        }
+
 
         if ($user->tfa_method == 'email' || $user->tfa_method == 'sms') {
             if ((time() - strtotime($user->tfa_15_mins_exp)) > (15 * 60 + 60)) {
@@ -1063,5 +1081,27 @@ class AuthController extends Controller
         }
 
         return $this->response->setStatusCode(200)->setJSON(['ok' => true]);
+    }
+
+    public function verify_recaptcha($recaptcha)
+    {
+        $g_recap_secret = getenv('recaptcha.secret');
+        $url = 'https://www.google.com/recaptcha/api/siteverify';
+        $data = array(
+            'secret' => $g_recap_secret,
+            'response' => $recaptcha,
+            'remoteip' => $this->request->getIPAddress()
+        );
+        $options = array(
+            'http' => array(
+                'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
+                'method' => 'POST',
+                'content' => http_build_query($data)
+            )
+        );
+        $context = stream_context_create($options);
+        $result = file_get_contents($url, false, $context);
+        $response = json_decode($result, true);
+        return $response;
     }
 }
