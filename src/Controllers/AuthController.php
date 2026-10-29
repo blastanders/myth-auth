@@ -569,42 +569,45 @@ class AuthController extends Controller
         }
         $user = model(UserModel::class)->where('email', session('tfa_email'))->first();
         $tfa_confirm = $this->request->getPost('tfa_confirm');
-
-        if ($user->tfa_method == 'email' || $user->tfa_method == 'sms') {
-            if ((time() - strtotime($user->tfa_15_mins_exp)) > (15 * 60 + 60)) {
-                //allow for 1 extra minute. written as 15 * 60 + 60 for easy search
-                return redirect()->back()->with('error', 'Authentication code has expired. Please click on Send Code to get a new one.');
-                die();
-            } else {
-                if ($tfa_confirm != $user->tfa_15_mins) {
-                    echo "Wrong two factor authentication code.";
+        if (empty($user)) {
+            return redirect()->to(site_url('/login'))->with('error', 'User not found.');
+        } else {
+            if ($user->tfa_method == 'email' || $user->tfa_method == 'sms') {
+                if ((time() - strtotime($user->tfa_15_mins_exp)) > (15 * 60 + 60)) {
+                    //allow for 1 extra minute. written as 15 * 60 + 60 for easy search
+                    return redirect()->back()->with('error', 'Authentication code has expired. Please click on Send Code to get a new one.');
                     die();
                 } else {
-                    // model(UserModel::class)->update($user->id, ['tfa_recipient' => $this->request->getPost('tfa_recipient')]);
+                    if ($tfa_confirm != $user->tfa_15_mins) {
+                        echo "Wrong two factor authentication code.";
+                        die();
+                    } else {
+                        // model(UserModel::class)->update($user->id, ['tfa_recipient' => $this->request->getPost('tfa_recipient')]);
+                        echo "success";
+                        session()->remove('tfa_email');
+                        $this->auth->login($user);
+                        die();
+                        return redirect()->to(site_url('/'));
+                    }
+                }
+            } else {
+                $res = $this->auth->verifyTfaCode($this->request->getPost('secret'), $tfa_confirm);
+                if ($res) {
+                    if (!isset($user->id) || empty($user->id)) {
+                        echo "expired";
+                        die();
+                    }
+                    model(UserModel::class)->update($user->id, ['tfa_secret' => $this->request->getPost('secret')]);
                     echo "success";
                     session()->remove('tfa_email');
                     $this->auth->login($user);
                     die();
                     return redirect()->to(site_url('/'));
-                }
-            }
-        } else {
-            $res = $this->auth->verifyTfaCode($this->request->getPost('secret'), $tfa_confirm);
-            if ($res) {
-                if (!isset($user->id) || empty($user->id)) {
-                    echo "expired";
+                } else {
+                    echo "Wrong two factor authentication code";
                     die();
+                    return redirect()->back()->with('error', 'Wrong two factor authentication code');
                 }
-                model(UserModel::class)->update($user->id, ['tfa_secret' => $this->request->getPost('secret')]);
-                echo "success";
-                session()->remove('tfa_email');
-                $this->auth->login($user);
-                die();
-                return redirect()->to(site_url('/'));
-            } else {
-                echo "Wrong two factor authentication code";
-                die();
-                return redirect()->back()->with('error', 'Wrong two factor authentication code');
             }
         }
     }
