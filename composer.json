@@ -25,13 +25,8 @@
     "homepage": "https://github.com/blastanders/myth-auth",
     "require": {
         "php": "^8.2",
-<<<<<<< HEAD
         "robthree/twofactorauth": ">=2.0",
         "endroid/qr-code": "^3.0"
-
-=======
-        "robthree/twofactorauth": ">=2.0"
->>>>>>> 9483fe822da719baef3786508361570f174b01b0
     },
     "require-dev": {
         "codeigniter4/codeigniter4-standard": "^1.3",
