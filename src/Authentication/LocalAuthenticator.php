@@ -224,10 +224,10 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         if (!empty($this->config->tfa_issuer)) {
             $app_domain = $this->config->tfa_issuer;
         }
-        $tfa = new TwoFactorAuth(new EndroidQrCodeProvider(), $app_domain);
+        $tfa = new TwoFactorAuth(new EndroidQrCodeProvider('ffffff', '000000', 0, 'M'), $app_domain);
         $secret = $tfa->createSecret();
 
-        $secret_qr = $tfa->getQRCodeImageAsDataUri($app_domain . ':' . $email, $secret);
+        $secret_qr = $tfa->getQRCodeImageAsDataUri($app_domain . ':' . $email, $secret, 300);
         // $this->userModel->update($id, ['tfa_secret' => $secret]);
         $return = array();
         $return['account_name'] = $app_domain . ": " . $email;
