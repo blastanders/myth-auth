@@ -53,7 +53,8 @@
 
 						<br>
 
-						<button type="submit" class="btn btn-primary btn-block"><?=lang('Auth.loginAction')?></button>
+						<button id="login-button" type="submit" class="btn btn-lg btn-primary g-recaptcha" data-sitekey="<?php print env('recaptcha.sitekey'); ?>" data-callback='onSubmit' data-action='submit'><?= lang('Auth.loginAction') ?></button>
+
 					</form>
 
 					<hr>
@@ -70,5 +71,25 @@
 		</div>
 	</div>
 </div>
+
+<script type="text/javascript">
+	function onSubmit(token) {
+		document.getElementById("login-button").disabled = true;
+		document.getElementById("login-button").innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <?= lang('Auth.loggingIn') ?>';
+		document.getElementById("login-form").submit();
+	}
+	function togglePasswordVisibility() {
+		var passwordInput = document.getElementById("password");
+		if (passwordInput.type === "password") {
+		passwordInput.type = "text";
+		document.getElementById("password-toggle-icon").classList.remove("fa-eye");
+		document.getElementById("password-toggle-icon").classList.add("fa-eye-slash");
+		} else {
+		passwordInput.type = "password";
+		document.getElementById("password-toggle-icon").classList.remove("fa-eye-slash");
+		document.getElementById("password-toggle-icon").classList.add("fa-eye");
+		}
+	}
+</script>
 
 <?= $this->endSection() ?>

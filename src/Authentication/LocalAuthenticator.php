@@ -7,6 +7,7 @@ use Myth\Auth\Entities\User;
 use Myth\Auth\Exceptions\AuthException;
 use Myth\Auth\Password;
 use \RobThree\Auth\TwoFactorAuth as TwoFactorAuth;
+use \RobThree\Auth\Providers\Qr\EndroidQrCodeProvider;
 
 class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInterface
 {
@@ -196,7 +197,7 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         if (!empty($this->config->tfa_issuer)) {
             $app_domain = $this->config->tfa_issuer;
         }
-        $google2fa = new TwoFactorAuth($app_domain);
+        $google2fa = new TwoFactorAuth(new EndroidQrCodeProvider(),$app_domain);
         $res = $google2fa->verifyCode($secret, $code, 3);
 
         return $res;
@@ -208,7 +209,7 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         if (!empty($this->config->tfa_issuer)) {
             $app_domain = $this->config->tfa_issuer;
         }
-        $google2fa = new TwoFactorAuth($app_domain);
+        $google2fa = new TwoFactorAuth(new EndroidQrCodeProvider(), $app_domain);
         if (empty($secret)) {
             $secret = $google2fa->createSecret();
         }
@@ -223,7 +224,7 @@ class LocalAuthenticator extends AuthenticationBase implements AuthenticatorInte
         if (!empty($this->config->tfa_issuer)) {
             $app_domain = $this->config->tfa_issuer;
         }
-        $tfa = new TwoFactorAuth($app_domain);
+        $tfa = new TwoFactorAuth(new EndroidQrCodeProvider(), $app_domain);
         $secret = $tfa->createSecret();
 
         $secret_qr = $tfa->getQRCodeImageAsDataUri($app_domain . ':' . $email, $secret);

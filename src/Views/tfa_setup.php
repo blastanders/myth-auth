@@ -82,7 +82,7 @@
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block float-end px-5 py-2 mb-5">Verify</button>
+                        <button type="submit" class="btn btn-primary btn-block float-end px-5 py-2 mb-5 submit-button">Verify</button>
                     </form>
                 </div>
             </div>
@@ -96,6 +96,9 @@
         $('#confirm_tfa_form').submit(function(e) {
             e.preventDefault();
             var tfa_confirm = $('#tfa_confirm').val();
+            $('.submit-button').prop('disabled', true);
+            $('.submit-button').text('Please wait...');
+            
             $.ajax({
                 url: $(this).attr('action'),
                 type: 'POST',

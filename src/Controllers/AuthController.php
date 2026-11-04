@@ -684,6 +684,8 @@ class AuthController extends Controller
         $tfa = $this->request->getPost('tfa');
         $recaptcha = $this->request->getPost('g-recaptcha-response');
 
+        
+
         if (empty($recaptcha)) {
             return redirect()->back()->with('error', 'Please verify that you are not a robot.');
             die();
@@ -692,6 +694,8 @@ class AuthController extends Controller
         $recaptcha = $this->verify_recaptcha($recaptcha);
 
         if (!$recaptcha['success']) {
+            pre_var_dump($recaptcha);
+            die(PHP_EOL.__FILE__.__LINE__.PHP_EOL);
             return redirect()->back()->with('error', 'Please verify that you are not a robot.');
             die();
         }
@@ -1088,7 +1092,17 @@ class AuthController extends Controller
 
     public function verify_recaptcha($recaptcha)
     {
-        $g_recap_secret = getenv('recaptcha.secret');
+        $g_recap_secret = env('recaptcha.secret');
+        if (empty($g_recap_secret)) {
+            // echo "No recaptcha secret found";
+            $g_recap_secret = env('recaptcha.secretkey');
+        }
+        // pre_var_dump($g_recap_secret);
+        // die(PHP_EOL.__FILE__.__LINE__.PHP_EOL);
+        if (empty($g_recap_secret)) {
+            return false;
+        }
+
         $url = 'https://www.google.com/recaptcha/api/siteverify';
         $data = array(
             'secret' => $g_recap_secret,

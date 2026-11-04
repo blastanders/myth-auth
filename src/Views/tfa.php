@@ -50,7 +50,7 @@
                             </div>
                             <?php } ?>
 							<div class="col">
-								<button type="submit" class="btn btn-primary btn-block px-5 py-2 mb-5 g-recaptcha" data-sitekey="<?php print env('recaptcha.sitekey'); ?>" data-callback='onSubmit' data-action='tfa'>Login</button>
+								<button type="submit" class="btn btn-primary btn-block px-5 py-2 mb-5 g-recaptcha submit-button" data-sitekey="<?php print env('recaptcha.sitekey'); ?>" data-callback='onSubmit' data-action='tfa'>Login</button>
 							</div>
 						</div>
 					</form>
@@ -62,6 +62,9 @@
 </div>
 <script type="text/javascript">
     function onSubmit(token) {
+        $('.submit-button').prop('disabled', true);
+        $('.submit-button').text('Please wait...');
+        
         var tfa = $('#tfa').val();
         var trust_this_device = 0;
         if ($('#trust_this_device').length > 0) {
